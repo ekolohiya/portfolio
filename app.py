@@ -1,12 +1,11 @@
 from flask import Flask, send_from_directory, request, jsonify
-import smtplib
-from email.mime.text import MIMEText
 import os
+import requests
 
 app = Flask(__name__)
 
-YOUR_EMAIL = "brawlstarsfreeze@gmail.com"
-YOUR_APP_PASSWORD = "qpeg rnht qepb nxwn"
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+TO_EMAIL = os.environ.get("TO_EMAIL")
 
 @app.route("/")
 def home():
@@ -23,40 +22,55 @@ def static_files(path):
 @app.route("/send", methods=["POST"])
 def send_email():
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
 
         if not data:
             return jsonify({"success": False, "message": "Немає даних"}), 400
 
-        name = data.get("name", "")
-        email = data.get("email", "")
-        subject = data.get("subject", "Нове повідомлення")
-        message = data.get("message", "")
+        name = data.get("name", "").strip()
+        email = data.get("email", "").strip()
+        subject = data.get("subject", "").strip()
+        message = data.get("message", "").strip()
 
-        text = f"""
-Нове повідомлення з сайту
+        if not name or not email or not subject or not message:
+            return jsonify({"success": False, "message": "Заповніть усі поля"}), 400
 
-Ім'я: {name}
-Email: {email}
-Тема: {subject}
+        if not RESEND_API_KEY or not TO_EMAIL:
+            return jsonify({"success": False, "message": "Не налаштовані змінні середовища"}), 500
 
-Повідомлення:
-{message}
-"""
+        html = f"""
+        <h2>Нове повідомлення з сайту</h2>
+        <p><b>Ім'я:</b> {name}</p>
+        <p><b>Email:</b> {email}</p>
+        <p><b>Тема:</b> {subject}</p>
+        <p><b>Повідомлення:</b><br>{message}</p>
+        """
 
-        msg = MIMEText(text, "plain", "utf-8")
-        msg["Subject"] = subject
-        msg["From"] = YOUR_EMAIL
-        msg["To"] = YOUR_EMAIL
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "from": "onboarding@resend.dev",
+                "to": [TO_EMAIL],
+                "subject": f"Повідомлення з сайту: {subject}",
+                "html": html,
+                "reply_to": email
+            },
+            timeout=20
+        )
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(YOUR_EMAIL, YOUR_APP_PASSWORD)
-            server.send_message(msg)
+        if response.status_code not in (200, 201):
+            return jsonify({
+                "success": False,
+                "message": f"Помилка Resend: {response.text}"
+            }), 500
 
         return jsonify({"success": True, "message": "Повідомлення надіслано!"})
 
     except Exception as e:
-        print("EMAIL ERROR:", e)
         return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == "__main__":
