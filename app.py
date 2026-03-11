@@ -7,21 +7,17 @@ app = Flask(__name__)
 YOUR_EMAIL = "brawlstarsfreeze@gmail.com"
 YOUR_APP_PASSWORD = "qpeg rnht qepb nxwn"
 
-
 @app.route("/")
 def home():
     return send_from_directory(".", "index.html")
-
 
 @app.route("/contact")
 def contact():
     return send_from_directory(".", "contact.html")
 
-
 @app.route("/<path:path>")
 def static_files(path):
     return send_from_directory(".", path)
-
 
 @app.route("/send", methods=["POST"])
 def send_email():
@@ -55,5 +51,5 @@ Email: {email}
 
     return jsonify({"success": True, "message": "Повідомлення надіслано!"})
 
-
-app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
