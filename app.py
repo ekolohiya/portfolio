@@ -22,14 +22,18 @@ def static_files(path):
 
 @app.route("/send", methods=["POST"])
 def send_email():
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    name = data["name"]
-    email = data["email"]
-    subject = data["subject"]
-    message = data["message"]
+        if not data:
+            return jsonify({"success": False, "message": "Немає даних"}), 400
 
-    text = f"""
+        name = data.get("name")
+        email = data.get("email")
+        subject = data.get("subject")
+        message = data.get("message")
+
+        text = f"""
 Нове повідомлення з сайту
 
 Ім'я: {name}
@@ -40,19 +44,22 @@ Email: {email}
 {message}
 """
 
-    msg = MIMEText(text, "plain", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = YOUR_EMAIL
-    msg["To"] = YOUR_EMAIL
+        msg = MIMEText(text, "plain", "utf-8")
+        msg["Subject"] = subject
+        msg["From"] = YOUR_EMAIL
+        msg["To"] = YOUR_EMAIL
 
-    server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-    server.login(YOUR_EMAIL, YOUR_APP_PASSWORD)
-    server.send_message(msg)
-    server.quit()
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.login(YOUR_EMAIL, YOUR_APP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
 
-    return jsonify({"success": True, "message": "Повідомлення надіслано!"})
+        return jsonify({"success": True, "message": "Повідомлення надіслано!"})
+
+    except Exception as e:
+        print("EMAIL ERROR:", e)
+        return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
