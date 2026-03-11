@@ -28,10 +28,10 @@ def send_email():
         if not data:
             return jsonify({"success": False, "message": "Немає даних"}), 400
 
-        name = data.get("name")
-        email = data.get("email")
-        subject = data.get("subject")
-        message = data.get("message")
+        name = data.get("name", "")
+        email = data.get("email", "")
+        subject = data.get("subject", "Нове повідомлення")
+        message = data.get("message", "")
 
         text = f"""
 Нове повідомлення з сайту
@@ -49,10 +49,9 @@ Email: {email}
         msg["From"] = YOUR_EMAIL
         msg["To"] = YOUR_EMAIL
 
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-        server.login(YOUR_EMAIL, YOUR_APP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(YOUR_EMAIL, YOUR_APP_PASSWORD)
+            server.send_message(msg)
 
         return jsonify({"success": True, "message": "Повідомлення надіслано!"})
 
