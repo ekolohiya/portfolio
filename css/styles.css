@@ -135,8 +135,7 @@ img{
 .lines{
     position: absolute;
     width: 1700px;
-    height: 800px;
-    right: -200px;   
+    right: -500px;   
     top: 55%;
     transform: translateY(-50%);
     z-index: 1;
@@ -1667,3 +1666,4 @@ textarea{
         font-size: 26px;
     }
 }
+
